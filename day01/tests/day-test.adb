@@ -7,14 +7,15 @@ package body Day.Test is
       expenses : constant Expense_Vector.Vector := load_file("test1.txt");
       product : constant Expense := matching_product(expenses);
    begin
-     Assert(product = 514579, "Wrong product, expected 514579, got " & Expense'IMAGE(product));
-     null;
+     Assert(product = 514579, "Wrong product, expected 514579, got" & Expense'IMAGE(product));
    end Test_Part1;
 
    procedure Test_Part2 (T : in out AUnit.Test_Cases.Test_Case'Class) is
       pragma Unreferenced (T);
+      expenses : constant Expense_Vector.Vector := load_file("test1.txt");
+      product : constant Expense := triple_matching_product(expenses);
    begin
-     null;
+     Assert(product = 241861950, "Wrong product, expected 241861950, got" & Expense'IMAGE(product));
    end Test_Part2;
 
    function Name (T : Test) return AUnit.Message_String is
