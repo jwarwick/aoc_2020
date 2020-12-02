@@ -18,4 +18,5 @@ package Day is
   procedure put(value : in Password_Vector.Vector);
 
   function count_valid(passwords : in Password_Vector.Vector) return Ada.Containers.Count_Type;
+  function count_valid_positions(passwords : in Password_Vector.Vector) return Ada.Containers.Count_Type;
 end Day;

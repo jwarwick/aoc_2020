@@ -13,8 +13,10 @@ package body Day.Test is
 
    procedure Test_Part2 (T : in out AUnit.Test_Cases.Test_Case'Class) is
       pragma Unreferenced (T);
+      passwords : constant Password_Vector.Vector := load_passwords("test1.txt");
+      count : constant Count_Type := count_valid_positions(passwords);
    begin
-     null;
+     Assert(count = 1, "Wrong valid password position count, expected 1, got " & Count_Type'IMAGE(count));
    end Test_Part2;
 
    function Name (T : Test) return AUnit.Message_String is

@@ -60,4 +60,21 @@ package body Day is
     end loop;
     return Ada.Containers.Count_Type(valid);
   end count_valid;
+
+  function count_valid_positions(passwords : in Password_Vector.Vector) return Ada.Containers.Count_Type is
+    valid : Natural := 0;
+  begin
+    for e of passwords loop
+      declare
+        p : constant Character := element(e.Pattern, 1);
+        c1 : constant Character := element(e.Password, e.min);
+        c2 : constant Character := element(e.Password, e.max);
+      begin
+        if (p = c1) xor (p = c2) then
+          valid := valid + 1;
+        end if;
+      end;
+    end loop;
+    return Ada.Containers.Count_Type(valid);
+  end count_valid_positions;
 end Day;
