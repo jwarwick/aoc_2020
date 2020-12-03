@@ -2,6 +2,13 @@
 with Ada.Containers.Ordered_Sets;
 
 package Day is
+  type Forest is private;
+
+  function load_map(filename : in String) return Forest;
+  function trees_hit(f : in Forest; slope : in Natural) return Natural;
+  function many_trees_hit(f : in Forest) return Natural;
+
+  private
   type Position is Record
     X : Natural := 0;
     Y : Natural := 0;
@@ -17,8 +24,4 @@ package Day is
     height : Natural := 0;
     width : Natural := 0;
   end record;
-
-  function load_map(filename : in String) return Forest;
-  function trees_hit(f : in Forest; slope : in Natural) return Natural;
-  function many_trees_hit(f : in Forest) return Natural;
 end Day;
