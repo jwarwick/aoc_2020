@@ -13,9 +13,10 @@ package body Day.Test is
 
    procedure Test_Part2 (T : in out AUnit.Test_Cases.Test_Case'Class) is
       pragma Unreferenced (T);
-      -- orbits : constant Orbit_List.Vector := load_orbits("input.txt");
+      f : constant Forest := load_map("test1.txt");
+      hit : constant Natural := many_trees_hit(f);
    begin
-     -- Assert(orbit_count_checksum(orbits) = 0, "Wrong orbit checksum");
+     Assert(hit = 336, "Expected to hit 336 trees, actually hit " & Natural'Image(hit));
      null;
    end Test_Part2;
 

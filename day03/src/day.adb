@@ -112,17 +112,34 @@ package body Day is
     return false;
   end hit_tree;
 
-  function trees_hit(f : in Forest; slope : in Natural) return Natural is
+  function trees_hit_slope(f : in Forest; slope_x : in Natural; slope_y : in Natural) return Natural is
     x : Natural := 0;
+    y : Natural := 0;
     hits : Natural := 0;
   begin
-    for y in 0..(f.height-1) loop
+    while y < f.height loop
       if hit_tree(Position'(X => x, Y => y), f.trees) then
         hits := hits + 1;
       end if;
-      x := (x + slope) mod f.width;
+      x := (x + slope_x) mod f.width;
+      y := y + slope_y;
     end loop;
     return hits;
+  end trees_hit_slope;
+
+  function trees_hit(f : in Forest; slope : in Natural) return Natural is
+  begin
+    return trees_hit_slope(f, slope, 1);
   end trees_hit;
 
+  function many_trees_hit(f : in Forest) return Natural is
+    mult : Natural := 1;
+  begin
+    mult := trees_hit_slope(f, 1, 1);
+    mult := mult * trees_hit_slope(f, 3, 1);
+    mult := mult * trees_hit_slope(f, 5, 1);
+    mult := mult * trees_hit_slope(f, 7, 1);
+    mult := mult * trees_hit_slope(f, 1, 2);
+    return mult;
+  end many_trees_hit;
 end Day;

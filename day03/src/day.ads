@@ -20,4 +20,5 @@ package Day is
 
   function load_map(filename : in String) return Forest;
   function trees_hit(f : in Forest; slope : in Natural) return Natural;
+  function many_trees_hit(f : in Forest) return Natural;
 end Day;
