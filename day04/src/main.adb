@@ -5,7 +5,9 @@ with Day; use Day;
 
 procedure main is
   batch : constant Passport_Vectors.Vector := load_batch("input.txt");
-  cnt : constant Count_Type := valid_count(batch);
+  present : constant Count_Type := present_count(batch);
+  valid : constant Count_Type := valid_count(batch);
 begin
-  put_line("Part 1: " & Count_Type'Image(cnt));
+  put_line("Part 1: " & Count_Type'Image(present));
+  put_line("Part 2: " & Count_Type'Image(valid));
 end main;

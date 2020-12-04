@@ -21,7 +21,6 @@ package Day is
   -- type Passports is access Passport_Vectors.Vector;
 
   function load_batch(filename : in String) return Passport_Vectors.Vector;
+  function present_count(batch : in Passport_Vectors.Vector) return Count_Type;
   function valid_count(batch : in Passport_Vectors.Vector) return Count_Type;
-
-
 end Day;

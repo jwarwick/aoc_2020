@@ -6,7 +6,7 @@ package body Day.Test is
       pragma Unreferenced (T);
       batch : constant Passport_Vectors.Vector := load_batch("test1.txt");
       len : constant Count_Type := batch.length;
-      cnt : constant Count_Type := valid_count(batch);
+      cnt : constant Count_Type := present_count(batch);
    begin
      Assert(len = 4, "Wrong number of passports, expected 4, got " & Count_Type'IMAGE(len));
      Assert(cnt = 2, "Wrong number of valid passports, expected 2, got " & Count_Type'IMAGE(cnt));
@@ -14,10 +14,13 @@ package body Day.Test is
 
    procedure Test_Part2 (T : in out AUnit.Test_Cases.Test_Case'Class) is
       pragma Unreferenced (T);
-      -- orbits : constant Orbit_List.Vector := load_orbits("input.txt");
+      valid_batch : constant Passport_Vectors.Vector := load_batch("valid.txt");
+      valid_cnt : constant Count_Type := valid_count(valid_batch);
+      invalid_batch : constant Passport_Vectors.Vector := load_batch("invalid.txt");
+      invalid_cnt : constant Count_Type := valid_count(invalid_batch);
    begin
-     -- Assert(orbit_count_checksum(orbits) = 0, "Wrong orbit checksum");
-     null;
+     Assert(invalid_cnt = 0, "Wrong number of invalid passports, expected 0, got " & Count_Type'IMAGE(invalid_cnt));
+     Assert(valid_cnt = 4, "Wrong number of valid passports, expected 4, got " & Count_Type'IMAGE(valid_cnt));
    end Test_Part2;
 
    function Name (T : Test) return AUnit.Message_String is
