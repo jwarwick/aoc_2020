@@ -1,7 +1,5 @@
 -- AoC 2020, Day 5
 with Ada.Text_IO;
--- with Ada.Strings.Fixed; use Ada.Strings.Fixed;
--- with Ada.Characters.Handling; use Ada.Characters.Handling;
 
 package body Day is
   package TIO renames Ada.Text_IO;
@@ -84,4 +82,31 @@ package body Day is
     end loop;
     return max;
   end highest_id;
+
+  package ID_Vectors is new Ada.Containers.Vectors
+    (Index_Type   => Natural,
+    Element_Type => Natural);
+
+  package ID_Sorter is new ID_Vectors.Generic_Sorting;
+
+  function missing_id(passes : in Boarding_Pass_Vectors.Vector) return Natural is
+    ids : ID_Vectors.Vector;
+    last : Natural;
+  begin
+    for p of passes loop
+      ids.append(seat_id(p));
+    end loop;
+
+    ID_Sorter.sort(ids);
+
+    last := ids(ids.first_index) - 1;
+    for id of ids loop
+      if id /= (last + 1) then
+        return id-1;
+      end if;
+      last := id;
+    end loop;
+    
+    return 0;
+  end missing_id;
 end Day;

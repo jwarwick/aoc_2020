@@ -16,4 +16,5 @@ package Day is
 
   function load_batch(filename : in String) return Boarding_Pass_Vectors.Vector;
   function highest_id(passes : in Boarding_Pass_Vectors.Vector) return Natural;
+  function missing_id(passes : in Boarding_Pass_Vectors.Vector) return Natural;
 end Day;
