@@ -11,7 +11,17 @@ package body Day is
      (Element_Type => Character);
   use Char_Sets;
 
-  function group_sum(filename : in String) return Natural is
+  function all_set return Char_Sets.Set is
+    a : Set;
+    alpha : constant String := "abcdefghijklmnopqrstuvwxyz";
+  begin
+    for c of alpha loop
+      a.insert(c);
+    end loop;
+    return a;
+  end all_set;
+
+  function anyone_sum(filename : in String) return Natural is
     file : TIO.File_Type;
     sum : Natural := 0;
   begin
@@ -43,6 +53,45 @@ package body Day is
     end loop;
     TIO.close(file);
     return sum;
-  end group_sum;
+  end anyone_sum;
+
+  function everyone_sum(filename : in String) return Natural is
+    file : TIO.File_Type;
+    sum : Natural := 0;
+  begin
+    TIO.open(File => file, Mode => TIO.In_File, Name => filename);
+    while not TIO.end_of_file(file) loop
+      declare
+          all_group : Set := all_set;
+      begin
+        group_loop:
+        loop
+          declare
+            line : constant String := TIO.get_line(file);
+          begin
+            if index_non_blank(line) = 0 then
+              sum := sum + Natural(length(all_group));
+              exit group_loop;
+            else
+              declare
+                person : Set;
+              begin
+                for c of line loop
+                  person.include(c);
+                end loop;
+                all_group := all_group and person;
+              end;
+              if TIO.end_of_file(file) then
+                sum := sum + Natural(length(all_group));
+                exit group_loop;
+              end if;
+            end if;
+          end;
+        end loop group_loop;
+      end;
+    end loop;
+    TIO.close(file);
+    return sum;
+  end everyone_sum;
 
 end Day;

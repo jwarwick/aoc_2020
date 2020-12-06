@@ -4,15 +4,16 @@ package body Day.Test is
 
    procedure Test_Part1 (T : in out AUnit.Test_Cases.Test_Case'Class) is
       pragma Unreferenced (T);
-      sum : constant Natural := group_sum("test1.txt");
+      sum : constant Natural := anyone_sum("test1.txt");
    begin
      Assert(sum = 11, "Wrong group sum, expected 11, got " & Natural'IMAGE(sum));
    end Test_Part1;
 
    procedure Test_Part2 (T : in out AUnit.Test_Cases.Test_Case'Class) is
       pragma Unreferenced (T);
+      sum : constant Natural := everyone_sum("test1.txt");
    begin
-     null;
+     Assert(sum = 6, "Wrong group sum, expected 6, got " & Natural'IMAGE(sum));
    end Test_Part2;
 
    function Name (T : Test) return AUnit.Message_String is
