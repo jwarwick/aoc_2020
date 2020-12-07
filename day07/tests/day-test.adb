@@ -11,9 +11,9 @@ package body Day.Test is
 
    procedure Test_Part2 (T : in out AUnit.Test_Cases.Test_Case'Class) is
       pragma Unreferenced (T);
-      bag_colors : constant Natural := valid_test_bag_colors;
+      count : constant Natural := nested_test_bags;
    begin
-     Assert(bag_colors = 4, "Wrong number of valid colors, expected 4, got " & Natural'IMAGE(bag_colors));
+     Assert(count = 32, "Wrong number of nested bags, expected 32, got " & Natural'IMAGE(count));
    end Test_Part2;
 
    function Name (T : Test) return AUnit.Message_String is

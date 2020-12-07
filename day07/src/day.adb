@@ -81,4 +81,31 @@ package body Day is
   begin
     return count_valid(b);
   end valid_test_bag_colors;
+
+  function count_nested(curr : in Bag_Color; bags : in Bag_Maps.Map) return Natural is
+    subs : Bag_Sets.Set;
+    sum : Natural := 0;
+  begin
+    if bags.contains(curr) then
+      subs := bags(curr);
+      for s of subs loop
+        sum := sum + s.count + (s.count * count_nested(s.color, bags));
+      end loop;
+      return sum;
+    else
+      return 0;
+    end if;
+  end count_nested;
+
+  function nested_bags return Natural is
+    b : constant Bag_Maps.Map := Bag.input_data;
+  begin
+    return count_nested(my_color, b);
+  end nested_bags;
+
+  function nested_test_bags return Natural is
+    b : constant Bag_Maps.Map := Bag.test_data;
+  begin
+    return count_nested(my_color, b);
+  end nested_test_bags;
 end Day;
