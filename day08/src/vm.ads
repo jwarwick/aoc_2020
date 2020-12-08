@@ -6,23 +6,32 @@ package VM is
   type Instruction_Index is new Natural;
   type VM is private;
 
+  VM_Exception : exception;
+
   function load_file(file : in String) return VM;
+  procedure reset(v : in out VM);
 
   function acc(v : in VM) return Integer;
+  function pc(v : in VM) return Instruction_Index;
 
-  function step(v : in out VM) return Instruction_Index;
+  function eval(v : in out VM; max_steps : in Positive) return Boolean;
+  function step(v : in out VM) return Boolean;
+  function instructions(v : in VM) return Count_Type;
   procedure print(v : in VM);
 
+  procedure swap_nop_jmp(idx : in Instruction_Index; v : in out VM);
+
   private
-  type Op is (acc, jmp, nop);
+  type Op is (acc, jmp, nop, halt);
 
   type Op_Record (Ins : Op := nop) is
     record
       Index : Instruction_Index;
-      Instruction : Op := Ins;
       case Ins is
         when acc | jmp | nop  =>
           Arg : Integer;
+        when halt => 
+          null;
       end case;
     end record;
 
@@ -39,6 +48,7 @@ package VM is
     Source : Ada.Strings.Unbounded.Unbounded_String;
     PC : Instruction_Index := 0;
     Acc : Integer := 0;
+    Halted : Boolean := false;
     Instructions : Op_Hashed_Maps.Map := Empty_Map;
   end record;
 end VM;

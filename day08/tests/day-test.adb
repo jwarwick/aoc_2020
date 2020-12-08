@@ -11,8 +11,9 @@ package body Day.Test is
 
    procedure Test_Part2 (T : in out AUnit.Test_Cases.Test_Case'Class) is
       pragma Unreferenced (T);
+      acc : constant Integer := acc_after_terminate("test1.txt");
    begin
-     null;
+     Assert(acc = 8, "Wrong accumulator, expected 8, got " & Integer'IMAGE(acc));
    end Test_Part2;
 
    function Name (T : Test) return AUnit.Message_String is
