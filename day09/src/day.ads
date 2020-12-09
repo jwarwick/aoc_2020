@@ -11,4 +11,5 @@ package Day is
   function load_file(filename : in String) return XMAS_Vector.Vector;
 
   function first_invalid(v : in XMAS_Vector.Vector; preamble : in Positive) return Long_Integer;
+  function find_sum(v : in XMAS_Vector.Vector; target : in Long_Integer) return Long_Integer;
 end Day;

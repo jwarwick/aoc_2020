@@ -12,8 +12,10 @@ package body Day.Test is
 
    procedure Test_Part2 (T : in out AUnit.Test_Cases.Test_Case'Class) is
       pragma Unreferenced (T);
+      v : constant XMAS_Vector.Vector := load_file("test1.txt");
+      contig : constant Long_Integer := find_sum(v, 127);
    begin
-     null;
+     Assert(contig = 62, "Wrong number, expected 62, got" & Long_Integer'IMAGE(contig));
    end Test_Part2;
 
    function Name (T : Test) return AUnit.Message_String is
