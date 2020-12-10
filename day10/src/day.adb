@@ -10,7 +10,7 @@ package body Day is
     package Adaptor_Sorter is new Adaptors.Generic_Sorting;
 
     file : TIO.File_Type;
-    v : Adaptors.Vector;
+    v : Adaptors.Vector := Empty_Vector;
     n : Natural := 0;
   begin
     TIO.open(File => file, Mode => TIO.In_File, Name => filename);
@@ -22,31 +22,6 @@ package body Day is
     Adaptor_Sorter.sort(Container => v);
     return v;
   end load_file;
-
-  function order_adaptors(v : in Adaptors.Vector; sln : in out Adaptors.Vector) return Boolean is
-    start : constant Natural := sln.last_element;
-    sln_copy : Adaptors.Vector := sln;
-    v_copy : Adaptors.Vector;
-  begin
-    if is_empty(v) then
-      return true;
-    end if;
-
-    for idx in v.first_index .. v.last_index loop
-      if start + 3 >= v(idx) then
-        v_copy := v;
-        v_copy.delete(idx);
-        sln_copy.append(v(idx));
-        if order_adaptors(v_copy, sln_copy) then
-          sln := sln_copy;
-          return true;
-        end if;
-      else
-        return false;
-      end if;
-    end loop;
-    return false;
-  end order_adaptors;
 
   function mult_diffs(v : in Adaptors.Vector) return Natural is
     diff_1 : Natural := 0;
@@ -68,18 +43,10 @@ package body Day is
 
   function mult_1_3_differences(v : in Adaptors.Vector) return Natural is
     remaining : Adaptors.Vector := v;
-    sln : Adaptors.Vector := Empty_Vector;
-    result : Boolean;
   begin
-    sln.append(0);
+    remaining.prepend(0);
     remaining.append(remaining.last_element + 3);
-    result := order_adaptors(remaining, sln);
-    if not result then
-      TIO.put_line("Failed to find ordering");
-      return 0;
-    end if;
-
-    return mult_diffs(sln);
+    return mult_diffs(remaining);
   end mult_1_3_differences;
 
   package Reachable_Map is new Ada.Containers.Ordered_Maps
