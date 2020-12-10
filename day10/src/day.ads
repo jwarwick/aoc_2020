@@ -11,4 +11,5 @@ package Day is
   function load_file(filename : in String) return Adaptors.Vector;
 
   function mult_1_3_differences(v : in Adaptors.Vector) return Natural;
+  function total_arrangments(v : in Adaptors.Vector) return Long_Integer;
 end Day;
