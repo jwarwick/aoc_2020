@@ -26,4 +26,5 @@ package Day is
   function load_file(filename : in String) return Ferry;
 
   function steady_state_occupied(m : in Ferry) return Natural;
+  function tolerant_steady_state_occupied(m : in Ferry) return Natural;
 end Day;
