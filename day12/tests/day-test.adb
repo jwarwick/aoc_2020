@@ -12,8 +12,10 @@ package body Day.Test is
 
   procedure Test_Part2 (T : in out AUnit.Test_Cases.Test_Case'Class) is
     pragma Unreferenced (T);
+    f : constant Ferry := load_file("test1.txt");
+    d : constant Natural := waypoint_distance(f);
   begin
-    null;
+    Assert(d = 286, "Wrong number, expected 286, got" & Natural'IMAGE(d));
   end Test_Part2;
 
   function Name (T : Test) return AUnit.Message_String is

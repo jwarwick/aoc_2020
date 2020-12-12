@@ -1,5 +1,6 @@
 -- AoC 2020, Day 12
 with Ada.Text_IO;
+with Ada.Numerics.Elementary_Functions; use Ada.Numerics.Elementary_Functions;
 
 package body Day is
   package TIO renames Ada.Text_IO;
@@ -34,7 +35,7 @@ package body Day is
       vec.append(parse_line(TIO.get_line(file)));
     end loop;
     TIO.close(file);
-    return Ferry'(instructions => vec, heading => east, x => 0, y => 0);
+    return Ferry'(instructions => vec, heading => east, x => 0, y => 0, way_x => -1, way_y => 10);
   end load_file;
 
   function action_to_heading(act : in Action_Type) return Heading_Type is
@@ -64,10 +65,6 @@ package body Day is
     new_pos : constant Natural := (curr_pos + steps) mod 4;
     new_heading : constant Heading_Type := Heading_Type'Val(new_pos);
   begin
-    -- TIO.put_line("curr pos: " & Natural'Image(curr_pos));
-    -- TIO.put_line("steps: " & Natural'Image(steps));
-    -- TIO.put_line("new_pos: " & Natural'Image(new_pos));
-    -- TIO.put_line(Heading_Type'Image(f.heading) & ", " & Integer'Image(angle) & " = " & Heading_Type'Image(new_heading));
     f.heading := new_heading;
   end turn;
 
@@ -80,9 +77,44 @@ package body Day is
         when left => turn(-1 * i.value, f);
         when right => turn(i.value, f);
       end case;
-      -- TIO.put_line("(" & Integer'Image(f.x) & "," & Integer'Image(f.y) & ")");
     end loop;
   end simulate;
+
+  procedure move_waypoint(dir : in Heading_Type; dist : in Integer; f : in out Ferry) is
+  begin
+    case dir is
+      when north => f.way_x := f.way_x - dist;
+      when south => f.way_x := f.way_x + dist;
+      when east => f.way_y := f.way_y + dist;
+      when west => f.way_y := f.way_y - dist;
+    end case;
+  end move_waypoint;
+
+  procedure rotate_waypoint(angle : in Integer; f : in out Ferry) is
+    RadPerDegree : constant Float := Ada.Numerics.Pi / 180.0;
+    radians : constant Float := RadPerDegree * Float(angle);
+    x : constant Float := Float(f.way_x);
+    y : constant Float := Float(f.way_y);
+    new_x : constant Float := (x * cos(radians)) - (y * sin(radians));
+    new_y : constant Float := (x * sin(radians)) + (y * cos(radians));
+  begin
+    f.way_x := Integer(new_x);
+    f.way_y := Integer(new_y);
+  end rotate_waypoint;
+
+  procedure simulate_waypoint(f : in out Ferry) is
+  begin
+    for i of f.instructions loop
+      case i.action is
+        when north..west => move_waypoint(action_to_heading(i.action), i.value, f);
+        when forward => 
+          f.x := f.x + (i.value * f.way_x);
+          f.y := f.y + (i.value * f.way_y);
+        when left => rotate_waypoint(i.value, f);
+        when right => rotate_waypoint(-1 * i.value, f);
+      end case;
+    end loop;
+  end simulate_waypoint;
 
   function distance(f : in Ferry) return Natural is
     tmp : Ferry := f;
@@ -91,4 +123,10 @@ package body Day is
     return abs(tmp.x) + abs(tmp.y);
   end distance;
 
+  function waypoint_distance(f : in Ferry) return Natural is
+    tmp : Ferry := f;
+  begin
+    simulate_waypoint(tmp);
+    return abs(tmp.x) + abs(tmp.y);
+  end waypoint_distance;
 end Day;

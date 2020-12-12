@@ -7,6 +7,7 @@ package Day is
 
   function load_file(filename : in String) return Ferry;
   function distance(f : in Ferry) return Natural;
+  function waypoint_distance(f : in Ferry) return Natural;
 
   private
   type Action_Type is (north, south, east, west, left, right, forward);
@@ -27,5 +28,7 @@ package Day is
     heading : Heading_Type := east;
     x : Integer := 0;
     y : Integer := 0;
+    way_x : Integer := 0;
+    way_y : Integer := 0;
   end record;
 end Day;
