@@ -12,8 +12,10 @@ package body Day.Test is
 
   procedure Test_Part2 (T : in out AUnit.Test_Cases.Test_Case'Class) is
     pragma Unreferenced (T);
+    p : constant Program := load_file("test2.txt");
+    t1 : constant Long_Integer := sum_memory_v2(p);
   begin
-    null;
+    Assert(t1 = 208, "Wrong number, expected 208, got" & Long_Integer'IMAGE(t1));
   end Test_Part2;
 
   function Name (T : Test) return AUnit.Message_String is
