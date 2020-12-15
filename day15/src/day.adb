@@ -1,10 +1,10 @@
 -- AoC 2020, Day 15
--- with Ada.Text_IO;
+with Ada.Text_IO;
 with Ada.Containers.Indefinite_Hashed_Maps;
 with Ada.Containers; use Ada.Containers;
 
 package body Day is
-  -- package TIO renames Ada.Text_IO;
+  package TIO renames Ada.Text_IO;
 
   function natural_hash(n : in Natural) return Hash_Type is
   begin
@@ -54,6 +54,10 @@ package body Day is
 
       if index = step then
         return last;
+      end if;
+
+      if index mod 100_000 = 0 then
+        TIO.put_line(Natural'Image(index));
       end if;
 
       index := index + 1;
