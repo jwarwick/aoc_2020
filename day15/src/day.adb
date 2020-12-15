@@ -1,7 +1,6 @@
 -- AoC 2020, Day 15
 -- with Ada.Text_IO;
 with Ada.Containers.Indefinite_Hashed_Maps;
-with Ada.Containers.Vectors;
 with Ada.Containers; use Ada.Containers;
 
 package body Day is
@@ -12,56 +11,46 @@ package body Day is
     return Hash_Type(n);
   end natural_hash;
 
-  package Age_Vectors is new Ada.Containers.Vectors
-    (Index_Type   => Natural,
-    Element_Type => Natural);
-  use Age_Vectors;
-
   package Natural_Hashed_Maps is new Ada.Containers.Indefinite_Hashed_Maps
     (Key_Type => Natural,
-    Element_Type => Age_Vectors.Vector,
+    Element_Type => Natural,
     Hash => Natural_Hash,
     Equivalent_Keys => "=");
 
   use Natural_Hashed_Maps;
   
-  ages : Natural_Hashed_Maps.Map := Empty_Map;
+  last_age : Natural_Hashed_Maps.Map := Empty_Map;
+  previous_age : Natural_Hashed_Maps.Map := Empty_Map;
 
   function sequence(s : in Input_Array; step : in Natural) return Natural is
     index : Natural := 1;
     last : Natural;
-    vec : Age_Vectors.Vector := Empty_Vector;
     prev : Natural;
+    diff : Natural;
   begin
-    clear(ages);
+    clear(last_age);
+    clear(previous_age);
 
     for e of s loop
-      clear(vec);
-      vec.append(index);
-      ages.insert(e, vec);
+      last_age.insert(e, index);
       last := e;
       index := index + 1;
     end loop;
 
     loop
-      vec := ages(last);
-      last := vec.last_element;
-      if vec.length = 1 then
-        last := 0;
+      if not previous_age.contains(last) then
+        diff := 0;
       else
-        prev := vec(vec.last_index - 1);
-        last := last - prev;
+        prev := previous_age(last);
+        last := last_age(last);
+        diff := last - prev;
       end if;
 
-      if ages.contains(last) then
-        vec := ages(last);
-        vec.append(index);
-        ages(last) := vec;
-      else
-        clear(vec);
-        vec.append(index);
-        ages.insert(last, vec);
+      if last_age.contains(diff) then
+        previous_age.include(diff, last_age(diff));
       end if;
+      last_age.include(diff, index);
+      last := diff;
 
       if index = step then
         return last;
