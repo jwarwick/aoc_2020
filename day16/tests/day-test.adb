@@ -12,8 +12,10 @@ package body Day.Test is
 
    procedure Test_Part2 (T : in out AUnit.Test_Cases.Test_Case'Class) is
       pragma Unreferenced (T);
+      input : constant Tickets := load_file("test2.txt");
+      depart : constant Long_Integer := departure_fields(input);
    begin
-     null;
+     Assert(depart = 11 * 12 * 13, "Wrong value, expected 11 * 12 * 13, got " & depart'IMAGE);
    end Test_Part2;
 
    function Name (T : Test) return AUnit.Message_String is

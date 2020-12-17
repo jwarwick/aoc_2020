@@ -2,6 +2,7 @@
 with Ada.Text_IO;
 with Ada.Strings.Fixed; use Ada.Strings.Fixed;
 with Ada.Strings.Unbounded; use Ada.Strings.Unbounded;
+with Ada.Containers.Ordered_Sets;
 
 package body Day is
   package TIO renames Ada.Text_IO;
@@ -35,15 +36,17 @@ package body Day is
     h2 : constant Natural := index(rule2, "-");
     min2 : constant Natural := Natural'Value(rule2(rule2'first .. h2-1));
     max2 : constant Natural := Natural'Value(rule2(h2+1 .. rule2'last));
+    comb : constant Combined_Rules := (Field_Rule'(Min => min1, Max => max1), Field_Rule'(Min => min2, Max => max2));
   begin
-    rules.append(Field_Rule'(Min => min1, Max => max1));
-    rules.append(Field_Rule'(Min => min2, Max => max2));
+    rules.append(comb);
   end parse_rule;
 
   function load_file(filename : in String) return Tickets is
     file : TIO.File_Type;
     rules : Rule_Vectors.Vector := Rule_Vectors.Empty_Vector;
     values : Value_Vectors.Vector := Value_Vectors.Empty_Vector;
+    nested : Nested_Vectors.Vector := Nested_Vectors.Empty_Vector;
+    my_ticket : Value_Vectors.Vector := Value_Vectors.Empty_Vector;
   begin
     TIO.open(File => file, Mode => TIO.In_File, Name => filename);
     loop
@@ -70,7 +73,7 @@ package body Day is
     declare
       line : constant String := TIO.get_line(file);
     begin
-      TIO.put_line("Mine: " & line);
+      parse_ticket(line, my_ticket);
     end;
         
     -- My ticket
@@ -89,30 +92,202 @@ package body Day is
       declare
         line : constant String := TIO.get_line(file);
       begin
+        values.clear;
         parse_ticket(line, values);
+        nested.append(values);
       end;
     end loop;
 
     TIO.close(file);
-    return Tickets'(Rules => rules, Values => values);
+    return Tickets'(Rules => rules, Values => nested, Ticket => my_ticket);
   end load_file;
 
   function sum_error_rate(t : in Tickets) return Natural is
     sum : Natural := 0;
     found : Boolean := false;
+    curr : Natural := 0;
+    row : Natural := 0;
+    row_count : Natural := 0;
   begin
     for v of t.Values loop
-      found := false;
-      for r of t.Rules loop
-        if v >= r.Min and v <= r.Max then
-          found := true;
-          exit;
+      sub_loop:
+      for subv of v loop
+        found := false;
+        curr := subv;
+        for r of t.Rules loop
+          if curr >= r(1).Min and curr <= r(1).Max then
+            found := true;
+            exit;
+          end if;
+          if curr >= r(2).Min and curr <= r(2).Max then
+            found := true;
+            exit;
+          end if;
+        end loop;
+        if not found then
+          TIO.put_line("Invalid value: row: " & row'IMAGE & ", value: " & curr'IMAGE);
+          sum := sum + curr;
+          row_count := row_count + 1;
         end if;
-      end loop;
-      if not found then
-        sum := sum + v;
-      end if;
+        row := row + 1;
+      end loop sub_loop;
     end loop;
+    TIO.put_line("Invalid row count: " & row_count'IMAGE);
     return sum;
   end sum_error_rate;
+
+  procedure filter_values(t : in Tickets; valid : in out Nested_Vectors.Vector) is
+    found : Boolean := false;
+    drop_count : Natural := 0;
+  begin
+    for v of t.Values loop
+      sub_loop:
+      for subv of v loop
+        found := false;
+        for r of t.Rules loop
+          if subv >= r(1).Min and subv <= r(1).Max then
+            found := true;
+            exit;
+          end if;
+          if subv >= r(2).Min and subv <= r(2).Max then
+            found := true;
+            exit;
+          end if;
+        end loop;
+        if not found then
+          exit;
+        end if;
+      end loop sub_loop;
+      if found then
+        valid.append(v);
+      else
+        drop_count := drop_count + 1;
+      end if;
+    end loop;
+    TIO.put_line("dropped: " & drop_count'IMAGE);
+  end filter_values;
+
+  package Rule_Sets is new Ada.Containers.Ordered_Sets
+    (Element_Type => Natural);
+  use Rule_Sets;
+
+  function departure_fields(t : in Tickets) return Long_Integer is
+    type Rules_Array is array(0 .. t.Rules.length-1) of Rule_Sets.Set;
+
+    function all_single(a : in Rules_Array) return Boolean is
+    begin
+      for r of a loop
+        if r.length /= 1 then
+          return false;
+        end if;
+      end loop;
+      return true;
+    end all_single;
+
+    function get_singles(a : in Rules_Array) return Rule_Sets.Set is
+      singles : Rule_Sets.Set := Empty_Set;
+    begin
+      for r of a loop
+        if r.length = 1 then
+          singles := singles or r;
+        end if;
+      end loop;
+      return singles;
+    end get_singles;
+
+    procedure remove_singles(singles : in Rule_Sets.Set; possibles : in out Rules_Array) is
+    begin
+      for c in possibles'range loop
+        if possibles(c).length /= 1 then
+          possibles(c) := possibles(c) - singles;
+        end if;
+      end loop;
+    end remove_singles;
+
+    valid : Nested_Vectors.Vector := Nested_Vectors.Empty_Vector;
+    possible_rules : Rules_Array;
+    full_rules : Rule_Sets.Set := Empty_Set;
+  begin
+    for i in 0..t.Rules.length-1 loop
+      full_rules.include(Natural(i));
+    end loop;
+    for i in 0..t.Rules.length-1 loop
+      possible_rules(i) := full_rules;
+    end loop;
+
+    TIO.put_line("Values length: " & t.Values.length'IMAGE);
+    filter_values(t, valid);
+    TIO.put_line("Valid length: " & valid.length'IMAGE);
+
+    for v of valid loop
+      for subv in 0..v.length-1 loop
+        for r in 0..t.Rules.length-1 loop
+          declare
+            curr : constant Natural := v(Natural(subv));
+            r_idx : constant Natural := Natural(r);
+            curr_rule : constant Combined_Rules := t.Rules(r_idx);
+            r1_min : constant Natural := curr_rule(1).Min;
+            r1_max : constant Natural := curr_rule(1).Max;
+            r2_min : constant Natural := curr_rule(2).Min;
+            r2_max : constant Natural := curr_rule(2).Max;
+          begin
+            if not((curr >= r1_min and curr <= r1_max) or (curr >= r2_min and curr <= r2_max)) then
+              possible_rules(subv).exclude(r_idx);
+            end if;
+          end;
+        end loop;
+      end loop;
+    end loop;
+
+    for pr of possible_rules loop
+      TIO.put_line(pr.length'IMAGE & " Possible rules: ");
+      for sv of pr loop
+        TIO.put(sv'IMAGE & ", ");
+      end loop;
+      TIO.new_line;
+    end loop;
+
+    loop
+      if all_single(possible_rules) then
+        exit;
+      end if;
+
+      declare
+        singles : constant Rule_Sets.Set := get_singles(possible_rules);
+      begin
+        remove_singles(singles, possible_rules);
+        -- TIO.new_line; TIO.new_line;
+        -- for pr of possible_rules loop
+        --   TIO.put_line("Possible rules: ");
+        --   for sv of pr loop
+        --     TIO.put(sv'IMAGE & ", ");
+        --   end loop;
+        --   TIO.new_line;
+        -- end loop;
+      end;
+    end loop;
+
+    declare
+      product : Long_Integer := 1;
+      -- final_idx : constant Natural := Natural'Min(5, possible_rules'length-1);
+    begin
+      TIO.put_line("Final ordering:");
+      for idx in 0..possible_rules'length-1 loop
+        declare
+          s : constant Rule_Sets.Set := possible_rules(Count_Type(idx));
+          offset : constant Natural := s(s.first);
+          my_value : constant Natural := t.Ticket(offset);
+        begin
+          TIO.put(idx'IMAGE & ":" & offset'Image & ":" & my_value'Image & ", ");
+          -- TIO.put_line("Multiplying: " & my_value'IMAGE);
+          -- TIO.put(my_value'IMAGE & "*");
+          if idx <= 5 then
+            product := product * Long_Integer(my_value);
+          end if;
+        end;
+      end loop;
+      TIO.new_line;
+      return product;
+    end;
+  end departure_fields;
 end Day;
