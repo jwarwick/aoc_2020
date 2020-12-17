@@ -13,8 +13,11 @@ package body Day.Test is
 
   procedure Test_Part2 (T : in out AUnit.Test_Cases.Test_Case'Class) is
     pragma Unreferenced (T);
+    g : constant Grid_Set.Set := load_file("test1.txt");
+    cycles : constant Natural := 6;
+    t2 : constant Natural := active_count_4d(g, cycles);
   begin
-   null;
+    Assert(t2 = 848, "Wrong number, expected 848, got" & Natural'IMAGE(t2));
   end Test_Part2;
 
   function Name (T : Test) return AUnit.Message_String is

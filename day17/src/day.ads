@@ -8,6 +8,7 @@ package Day is
     x : Integer := 0;
     y : Integer := 0;
     z : Integer := 0;
+    w : Integer := 0;
   end record;
 
   function location_hash(key : in Location) return Hash_Type;
@@ -20,4 +21,5 @@ package Day is
 
   function load_file(filename : in String) return Grid_Set.Set;
   function active_count(g : in Grid_Set.Set; cycles : in Natural) return Natural;
+  function active_count_4d(g : in Grid_Set.Set; cycles : in Natural) return Natural;
 end Day;
