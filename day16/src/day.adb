@@ -106,8 +106,6 @@ package body Day is
     sum : Natural := 0;
     found : Boolean := false;
     curr : Natural := 0;
-    row : Natural := 0;
-    row_count : Natural := 0;
   begin
     for v of t.Values loop
       sub_loop:
@@ -125,14 +123,10 @@ package body Day is
           end if;
         end loop;
         if not found then
-          TIO.put_line("Invalid value: row: " & row'IMAGE & ", value: " & curr'IMAGE);
           sum := sum + curr;
-          row_count := row_count + 1;
         end if;
-        row := row + 1;
       end loop sub_loop;
     end loop;
-    TIO.put_line("Invalid row count: " & row_count'IMAGE);
     return sum;
   end sum_error_rate;
 
@@ -164,7 +158,6 @@ package body Day is
         drop_count := drop_count + 1;
       end if;
     end loop;
-    TIO.put_line("dropped: " & drop_count'IMAGE);
   end filter_values;
 
   package Rule_Sets is new Ada.Containers.Ordered_Sets
@@ -215,9 +208,7 @@ package body Day is
       possible_rules(i) := full_rules;
     end loop;
 
-    TIO.put_line("Values length: " & t.Values.length'IMAGE);
     filter_values(t, valid);
-    TIO.put_line("Valid length: " & valid.length'IMAGE);
 
     for v of valid loop
       for subv in 0..v.length-1 loop
@@ -232,19 +223,11 @@ package body Day is
             r2_max : constant Natural := curr_rule(2).Max;
           begin
             if not((curr >= r1_min and curr <= r1_max) or (curr >= r2_min and curr <= r2_max)) then
-              possible_rules(subv).exclude(r_idx);
+              possible_rules(Count_Type(r_idx)).exclude(Natural(subv));
             end if;
           end;
         end loop;
       end loop;
-    end loop;
-
-    for pr of possible_rules loop
-      TIO.put_line(pr.length'IMAGE & " Possible rules: ");
-      for sv of pr loop
-        TIO.put(sv'IMAGE & ", ");
-      end loop;
-      TIO.new_line;
     end loop;
 
     loop
@@ -256,37 +239,23 @@ package body Day is
         singles : constant Rule_Sets.Set := get_singles(possible_rules);
       begin
         remove_singles(singles, possible_rules);
-        -- TIO.new_line; TIO.new_line;
-        -- for pr of possible_rules loop
-        --   TIO.put_line("Possible rules: ");
-        --   for sv of pr loop
-        --     TIO.put(sv'IMAGE & ", ");
-        --   end loop;
-        --   TIO.new_line;
-        -- end loop;
       end;
     end loop;
 
     declare
       product : Long_Integer := 1;
-      -- final_idx : constant Natural := Natural'Min(5, possible_rules'length-1);
     begin
-      TIO.put_line("Final ordering:");
       for idx in 0..possible_rules'length-1 loop
         declare
           s : constant Rule_Sets.Set := possible_rules(Count_Type(idx));
           offset : constant Natural := s(s.first);
           my_value : constant Natural := t.Ticket(offset);
         begin
-          TIO.put(idx'IMAGE & ":" & offset'Image & ":" & my_value'Image & ", ");
-          -- TIO.put_line("Multiplying: " & my_value'IMAGE);
-          -- TIO.put(my_value'IMAGE & "*");
-          if idx <= 5 then
+          if idx < 6 then
             product := product * Long_Integer(my_value);
           end if;
         end;
       end loop;
-      TIO.new_line;
       return product;
     end;
   end departure_fields;
