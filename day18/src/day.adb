@@ -69,4 +69,62 @@ package body Day is
     return sum;
   end hw_sum;
 
+  function eval_newmath_partial_string(initial : in Long_Integer; expr : in String; idx : in out Natural) return Long_Integer is
+    left : Long_Integer := initial;
+    tmp : Long_Integer;
+    op : Operation := none;
+  begin
+    -- all numbers are a single digit
+    while idx <= expr'last loop
+      declare
+        c : constant Character := expr(idx);
+      begin
+        idx := idx + 1;
+        case c is
+          when ' ' => null;
+          when '+' => op := add;
+          when '*' =>
+            op := mult;
+            tmp := eval_newmath_partial_string(0, expr, idx);
+            return eval_op(op, left, tmp);
+          when '(' =>
+            tmp := eval_newmath_partial_string(0, expr, idx);
+            if op = none then
+              left := tmp;
+            else
+              left := eval_op(op, left, tmp);
+            end if;
+          when ')' =>
+            return left;
+          when others =>
+            case op is
+                when none => left := Long_Integer'Value((1 => c));
+                when add => left := eval_op(op, left, Long_Integer'Value((1 => c)));
+                when mult =>
+                  tmp := eval_newmath_partial_string(0, expr, idx);
+                  left := eval_op(op, left, tmp);
+            end case;
+        end case;
+      end;
+    end loop;
+    return left;
+  end eval_newmath_partial_string;
+
+  function eval_newmath_string(expr : in String) return Long_Integer is
+    start : Natural := expr'first;
+  begin
+    return eval_newmath_partial_string(0, expr, start);
+  end eval_newmath_string;
+
+  function hw_newmath_sum(filename : in String) return Long_Integer is
+    file : TIO.File_Type;
+    sum : Long_Integer := 0;
+  begin
+    TIO.open(File => file, Mode => TIO.In_File, Name => filename);
+    while not TIO.end_of_file(file) loop
+      sum := sum + eval_newmath_string(TIO.get_line(file));
+    end loop;
+    TIO.close(file);
+    return sum;
+  end hw_newmath_sum;
 end Day;
