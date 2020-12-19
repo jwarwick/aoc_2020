@@ -5,14 +5,17 @@ package body Day.Test is
   procedure Test_Part1 (T : in out AUnit.Test_Cases.Test_Case'Class) is
     pragma Unreferenced (T);
     t1 : constant Natural := count_valid("test1.txt");
+    t2 : constant Natural := count_valid("test2.txt");
   begin
     Assert(t1 = 2, "Wrong number, expected 2, got" & t1'IMAGE);
+    Assert(t2 = 3, "Wrong number, expected 3, got" & t2'IMAGE);
   end Test_Part1;
 
   procedure Test_Part2 (T : in out AUnit.Test_Cases.Test_Case'Class) is
     pragma Unreferenced (T);
+    t2 : constant Natural := count_valid_updated("test2.txt");
   begin
-    null;
+    Assert(t2 = 12, "Wrong number, expected 12, got" & t2'IMAGE);
   end Test_Part2;
 
   function Name (T : Test) return AUnit.Message_String is

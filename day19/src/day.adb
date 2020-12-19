@@ -191,13 +191,9 @@ package body Day is
     return test_input(line, r);
   end test_input;
 
-  function count_valid(filename : in String) return Natural is
-    file : TIO.File_Type;
-    sum : Natural := 0;
+  procedure read_rules(file : in out TIO.File_Type) is
   begin
     rules.clear;
-    TIO.open(File => file, Mode => TIO.In_File, Name => filename);
-    -- parse rules
     loop
       declare
         line : constant String := TIO.get_line(file);
@@ -208,11 +204,15 @@ package body Day is
         parse_rule(line);
       end;
     end loop;
+  end read_rules;
 
-    -- TIO.put_line("Rules:");
-    -- put_line(rules);
+  function count_valid(filename : in String) return Natural is
+    file : TIO.File_Type;
+    sum : Natural := 0;
+  begin
+    TIO.open(File => file, Mode => TIO.In_File, Name => filename);
+    read_rules(file);
 
-    -- inputs
     while not TIO.end_of_file(file) loop
       if test_input(TIO.get_line(file)) then
         sum := sum + 1;
@@ -221,4 +221,25 @@ package body Day is
     TIO.close(file);
     return sum;
   end count_valid;
+
+  function count_valid_updated(filename : in String) return Natural is
+    file : TIO.File_Type;
+    sum : Natural := 0;
+  begin
+    TIO.open(File => file, Mode => TIO.In_File, Name => filename);
+    read_rules(file);
+
+    rules.delete(8);
+    rules.delete(11);
+    parse_rule("8: 42 | 42 8");
+    parse_rule("11: 42 31 | 42 11 31");
+
+    while not TIO.end_of_file(file) loop
+      if test_input(TIO.get_line(file)) then
+        sum := sum + 1;
+      end if;
+    end loop;
+    TIO.close(file);
+    return sum;
+  end count_valid_updated;
 end Day;
