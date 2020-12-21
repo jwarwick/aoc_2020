@@ -11,7 +11,6 @@ with Ada.Strings.Hash;
 package body Day is
   package TIO renames Ada.Text_IO;
 
-
   package Ingredient_Maps is new Ada.Containers.Indefinite_Hashed_Maps
     (Key_Type       => String,
     Element_Type    => Natural,
@@ -23,6 +22,7 @@ package body Day is
      (Index_Type   => Natural,
       Element_Type => Unbounded_String);
   use String_Vectors;
+
 
   package List_Vectors is new Ada.Containers.Vectors
      (Index_Type   => Natural,
@@ -54,13 +54,79 @@ package body Day is
 
   counts : Ingredient_Maps.Map;
   foods : List_Vectors.Vector;
+  allergen_keys : String_Sets.Set;
   ingredient_allergens : Ingredient_To_Allergen_Maps.Map;
   allergen_ingredients : Allergen_To_Ingredient_Maps.Map;
+  allergens : Ingredient_To_Allergen_Maps.Map;
+
+  -- function Allergen_Less(a1: in Unbounded_String; a2 : in Unbounded_String) return boolean is
+  -- begin
+  --   return allergens(to_string(a1)).first_element < allergens(to_string(a2)).first_element;
+  -- end Allergen_Less;
+
+  -- package Ingredient_Sort is new String_Vectors.Generic_Sorting(Allergen_Less);
+  -- use Ingredient_Sort;
+
+  procedure flatten_allergens is
+    s : String_Sets.Set;
+  begin
+    for c in allergen_ingredients.Iterate loop
+      s.clear;
+      for v of allergen_ingredients(c) loop
+        s := s or v;
+      end loop;
+      allergens.insert(key(c), s);
+    end loop;
+  end flatten_allergens;
+
+  function all_length_one return Boolean is
+  begin
+    for c in allergens.iterate loop
+      if allergens(c).length /= 1 then
+        return false;
+      end if;
+    end loop;
+    return true;
+  end all_length_one;
+
+  function all_singles return String_Sets.Set is
+    s : String_Sets.Set := String_Sets.Empty_Set;
+  begin
+    for c in allergens.iterate loop
+      if allergens(c).length = 1 then
+        s.include(allergens(c).first_element);
+      end if;
+    end loop;
+    return s;
+  end all_singles;
+
+  procedure reduce_allergens is
+  begin
+    loop
+      if all_length_one then
+        exit;
+      end if;
+      declare
+        singles : constant String_Sets.Set := all_singles;
+      begin
+        if singles.is_empty then
+          TIO.put_line("No single element sets!");
+          exit;
+        end if;
+        for k of allergen_keys loop
+          if allergens(to_string(k)).length > 1 then
+            allergens(to_string(k)) := allergens(to_string(k)) - singles;
+          end if;
+        end loop;
+      end;
+    end loop;
+  end reduce_allergens;
 
   procedure link_allergen(allergen : in String; ing : in String_Vectors.Vector) is
     set_vec : Set_Vectors.Vector := Set_Vectors.Empty_Vector;
     str_set : String_Sets.Set := String_Sets.Empty_Set;
   begin
+    allergen_keys.include(to_unbounded_string(allergen));
     for i of ing loop
       str_set.include(i);
     end loop;
@@ -123,7 +189,7 @@ package body Day is
     end loop;
   end read_ingredient;
 
-  function ingredient_count(filename : in String) return Natural is
+  procedure ingredient_count(filename : in String) is
     file : TIO.File_Type;
     sum : Natural := 0;
   begin
@@ -163,6 +229,8 @@ package body Day is
     --   TIO.new_line;
     -- end loop;
 
+    flatten_allergens;
+
     for c in ingredient_allergens.Iterate loop
       declare
         possible_allergens : constant String_Sets.Set := ingredient_allergens(c);
@@ -173,6 +241,7 @@ package body Day is
           for v of allergen_ingredients(to_string(a)) loop
             if not v.contains(to_unbounded_string(ing)) then
               cnt := cnt - 1;
+              allergens(to_string(a)).exclude(to_unbounded_string(ing));
               exit;
             end if;
           end loop;
@@ -182,7 +251,19 @@ package body Day is
         end if;
       end;
     end loop;
+    TIO.put_line("Part 1: " & sum'IMAGE);
 
-    return sum;
+    reduce_allergens;
+
+    for c in allergens.iterate loop
+      TIO.put_line("Allergen: " & key(c));
+      for elt of allergens(c) loop
+        TIO.put(to_string(elt) & ", ");
+      end loop;
+      TIO.new_line;
+    end loop;
+    -- screw sorting in Ada.
+    -- examine the above output and sort it yourself
+
   end ingredient_count;
 end Day;

@@ -2,6 +2,6 @@
 
 package Day is
 
-  function ingredient_count(filename : in String) return Natural;
+  procedure ingredient_count(filename : in String);
 
 end Day;
