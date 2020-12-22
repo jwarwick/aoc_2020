@@ -1,4 +1,5 @@
 with AUnit.Assertions; use AUnit.Assertions;
+with Ada.Text_IO;
 
 package body Day.Test is
 
@@ -11,8 +12,11 @@ package body Day.Test is
 
   procedure Test_Part2 (T : in out AUnit.Test_Cases.Test_Case'Class) is
     pragma Unreferenced (T);
+    t1 : constant Natural := recursive_combat("test1.txt");
+    t2 : constant Natural := recursive_combat("test2.txt");
   begin
-    null;
+    Ada.Text_IO.put_line("Infinite game ended" & t2'IMAGE);
+    Assert(t1 = 291, "Wrong number, expected 291, got" & t1'IMAGE);
   end Test_Part2;
 
   function Name (T : Test) return AUnit.Message_String is
