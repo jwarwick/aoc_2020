@@ -11,7 +11,7 @@ package body Day is
   end record;
 
   function hex_hash(h : in Hex) return Hash_Type is
-    v : constant Long_Integer := Long_Integer((h.x * 17) + (h.y * 29) + (h.z * 43));
+    v : constant Long_Integer := Long_Integer((h.x * 103) + (h.y * 29) + (h.z * 43));
   begin
     return Hash_Type(v mod Long_Integer(Hash_Type'Last));
   end hex_hash;
@@ -54,7 +54,83 @@ package body Day is
     end if;
   end move_south;
 
-  function count_tiles(filename : in String) return Natural is
+  type Color_Type is (black, white);
+
+  function color(c : in Hex; h : in Hex_Sets.set) return Color_Type is
+  begin 
+    if h.contains(c) then
+      return black;
+    else
+      return white;
+    end if;
+  end color;
+
+  function neighbors(c : in Hex) return Hex_Sets.Set is
+    n : Hex_Sets.Set := Empty_Set;
+  begin
+    n.include(Hex'(x => c.x+1, y => c.y, z => c.z-1));
+    n.include(Hex'(x => c.x+1, y => c.y-1, z => c.z));
+    n.include(Hex'(x => c.x, y => c.y-1, z => c.z+1));
+    n.include(Hex'(x => c.x-1, y => c.y, z => c.z+1));
+    n.include(Hex'(x => c.x-1, y => c.y+1, z => c.z));
+    n.include(Hex'(x => c.x, y => c.y+1, z => c.z-1));
+    return n;
+  end neighbors;
+
+  function all_neighbors(h : in Hex_Sets.set) return Hex_Sets.Set is
+    n : Hex_Sets.Set := Empty_Set;
+  begin
+    n.reserve_capacity(10_000);
+    for c of h loop
+      n := n or neighbors(c);
+    end loop;
+    return n;
+  end all_neighbors;
+
+  -- procedure put(h : in Hex) is
+  -- begin
+  --   TIO.put("(" & h.x'IMAGE & "," & h.y'IMAGE & "," & h.z'IMAGE & ")");
+  -- end put;
+
+  function black_neighbors(c : in Hex; h : in Hex_Sets.Set) return Natural is
+    neighs : constant Hex_Sets.Set := neighbors(c);
+    total : Natural := 0;
+  begin
+    for c of neighs loop
+      if black = color(c, h) then
+        total := total + 1;
+      end if;
+    end loop;
+    return total;
+  end black_neighbors;
+
+  procedure step(h : in out Hex_Sets.set) is
+    n : constant Hex_Sets.Set := all_neighbors(h);
+    complete : constant Hex_Sets.Set := h or n;
+    next : Hex_Sets.Set := Empty_Set;
+  begin
+    next.reserve_capacity(10_000);
+    TIO.put_line("Count: " & complete.length'IMAGE);
+    for c of complete loop
+      declare
+        black_count : constant Natural := black_neighbors(c, h);
+      begin
+        case color(c, h) is
+          when white =>
+            if black_count = 2 then
+              next.include(c);
+            end if;
+          when black =>
+            if not(black_count = 0 or black_count > 2) then
+              next.include(c);
+            end if;
+        end case;
+      end;
+    end loop;
+    h := next;
+  end step;
+
+  function eval_input(filename : in String) return Hex_Sets.Set is
     file : TIO.File_Type;
     h : Hex_Sets.Set := Empty_Set;
     start_hex : constant Hex := Hex'(x=>0, y=>0, z=>0);
@@ -89,6 +165,23 @@ package body Day is
       end;
     end loop;
     TIO.close(file);
+    return h;
+  end eval_input;
+
+  function count_tiles(filename : in String) return Natural is
+    h : constant Hex_Sets.Set := eval_input(filename);
+  begin
     return Natural(h.length);
   end count_tiles;
+
+  function evolve_tiles(filename : in String; steps : in Natural) return Natural is
+    h : Hex_Sets.Set := eval_input(filename);
+  begin
+    h.reserve_capacity(10_000);
+    for s in 1..steps loop
+      step(h);
+      TIO.put_line("Day" & s'IMAGE & ":" & h.length'IMAGE);
+    end loop;
+    return Natural(h.length);
+  end evolve_tiles;
 end Day;

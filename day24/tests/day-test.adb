@@ -11,8 +11,9 @@ package body Day.Test is
 
   procedure Test_Part2 (T : in out AUnit.Test_Cases.Test_Case'Class) is
     pragma Unreferenced (T);
+    t1 : constant Natural := evolve_tiles("test1.txt", 100);
   begin
-    null;
+    Assert(t1 = 2208, "Wrong number, expected 2208, got" & t1'IMAGE);
   end Test_Part2;
 
   function Name (T : Test) return AUnit.Message_String is
