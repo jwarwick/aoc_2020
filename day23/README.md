@@ -91,4 +91,4 @@ In the above example (389125467), this would be 934001 and then 159792; multiply
 
 Determine which two cups will end up immediately clockwise of cup 1. What do you get if you multiply their labels together?
 
-Answer: **X**
+Answer: **41785843847**

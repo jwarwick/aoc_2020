@@ -11,4 +11,5 @@ package Day is
   type Cup_Array is array(Cup_Index) of Cup_Number;
 
   function play(c : in Cup_Array; steps : in Natural) return String;
+  function play2(c : in Cup_Array; total_cups : in Natural; steps : in Natural) return Long_Integer;
 end Day;

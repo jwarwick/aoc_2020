@@ -98,4 +98,110 @@ package body Day is
       end loop;
     end;
   end play;
+
+
+  function play2(c : in Cup_Array; total_cups : in Natural; steps : in Natural) return Long_Integer is
+    type Cup;
+    type Cup_Access is access Cup;
+
+    type Cup is record
+      Value : Natural;
+      Next : Cup_Access;
+    end record;
+
+    type Cup_Lookup_Array is array(1..total_cups) of Cup_Access;
+
+    lookup : Cup_Lookup_Array;
+    curr_cup : Cup_Access := null;
+  begin
+    declare
+      new_cup : Cup_Access;
+      last : Cup_Access := null;
+      cnt : Natural := 1;
+    begin
+      for v of c loop
+        new_cup := new Cup'(Value=>Natural(v), Next=>null);
+        if curr_cup = null then
+          curr_cup := new_cup;
+        end if;
+        lookup(new_cup.Value) := new_cup;
+
+        if last /= null then
+          last.Next := new_cup;
+        end if;
+
+        last := new_cup;
+        cnt := cnt + 1;
+      end loop;
+
+      for v in cnt..total_cups loop
+        new_cup := new Cup'(Value=>Natural(v), Next=>null);
+        lookup(new_cup.Value) := new_cup;
+        last.Next := new_cup;
+        last := new_cup;
+      end loop;
+
+      last.next := curr_cup;
+    end;
+
+    -- declare
+    --   tmp_cup : Cup_Access := curr_cup;
+    --   cnt : Natural := 0;
+    -- begin
+    --   TIO.put_line("cups:");
+    --   loop
+    --     TIO.put(tmp_cup.value'IMAGE & ", ");
+    --     tmp_cup := tmp_cup.next;
+
+    --     if cnt >= 20 then
+    --       exit;
+    --     end if;
+    --     cnt := cnt + 1;
+    --   end loop;
+    -- end;
+
+    for s in 1..steps loop
+      declare
+        type Move_Array is array(1..3) of Natural;
+        target : Natural := curr_cup.value;
+        target_ptr : Cup_Access := null;
+        move_ptr : Cup_Access := null;
+        move_vals : Move_Array;
+      begin
+        move_ptr := curr_cup.next;
+
+        move_vals(1) := curr_cup.next.value;
+        move_vals(2) := curr_cup.next.next.value;
+        move_vals(3) := curr_cup.next.next.next.value;
+
+        curr_cup.next := curr_cup.next.next.next.next;
+
+        loop
+          if target = 1 then
+            target := total_cups;
+          else
+            target := target - 1;
+          end if;
+
+          if target /= move_vals(1) and target /= move_vals(2) and target /= move_vals(3) then
+            exit;
+          end if;
+        end loop;
+        target_ptr := lookup(target);
+
+        move_ptr.next.next.next := target_ptr.next;
+        target_ptr.next := move_ptr;
+
+        curr_cup := curr_cup.next;
+      end;
+    end loop;
+
+    declare
+      i : constant Cup_Access := lookup(1);
+      n1 : constant Long_Integer := Long_Integer(i.next.value);
+      n2 : constant Long_Integer := Long_Integer(i.next.next.value);
+    begin
+      return n1 * n2;
+    end;
+  end play2;
 end Day;
