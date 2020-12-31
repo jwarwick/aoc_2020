@@ -166,7 +166,7 @@ Assemble the tiles into an image. What do you get if you multiply together the I
 
 To begin, get your puzzle input.
 
-Answer: **X**
+Answer: **7901522557967**
 
 # Part 2
 Answer: **X**

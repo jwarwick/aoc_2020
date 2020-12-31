@@ -16,13 +16,21 @@ package body Day is
   type Line_Value is mod 2**10;
   type Tile_Array is array(0..9) of Line_Value;
 
-  type Edge_Array is array(0..3) of Line_Value;
+  -- type Edge_Array is array(0..3) of Line_Value;
 
-  type Configuration is (r1, r2, r3, r4, fr1, fr2, fr3, fr4);
+  type Configuration is (r1, r2, r3, r4);--, fr1, fr2, fr3, fr4);
+
+  package Neighbor_Sets is new Ada.Containers.Ordered_Sets
+     (Element_Type => Natural);
+  use Neighbor_Sets;
 
   type Tile is record
     id : Natural;
+
+    neighbors : Neighbor_Sets.Set;
+
     config : Configuration;
+
     lines : Tile_Array;
     lines_rev : Tile_Array;
     top : Line_Value;
@@ -40,6 +48,11 @@ package body Day is
     return Hash_Type(id);
   end id_hash;
 
+  function line_hash(id: Line_Value) return Hash_Type is
+  begin
+    return Hash_Type(id);
+  end line_hash;
+
   package Tile_Maps is new Ada.Containers.Indefinite_Hashed_Maps
     (Key_Type       => Natural,
     Element_Type    => Tile,
@@ -49,28 +62,32 @@ package body Day is
   use Tile_Maps;
   tiles : Tile_Maps.Map := Empty_Map;
 
-  function edges(t : in Tile) return Edge_Array is
-  begin
-    case t.config is
-      when r1 => return (t.top, t.right, t.bottom, t.left);
-      when r2 => return (t.left_rev, t.top, t.right_rev, t.bottom);
-      when r3 => return (t.bottom_rev, t.left_rev, t.top_rev, t.right_rev);
-      when r4 => return (t.right, t.bottom_rev, t.left, t.top_rev);
-      -- XXX work out the flipped sides
-      when others => return (t.top, t.right, t.bottom, t.left);
-    end case;
-  end edges;
+  -- function edges(t : in Tile) return Edge_Array is
+  -- begin
+  --   case t.config is
+  --     when r1 => return (t.top, t.right, t.bottom, t.left);
+  --     when r2 => return (t.left_rev, t.top, t.right_rev, t.bottom);
+  --     when r3 => return (t.bottom_rev, t.left_rev, t.top_rev, t.right_rev);
+  --     when r4 => return (t.right, t.bottom_rev, t.left, t.top_rev);
+  --     -- when others => return (t.right, t.bottom_rev, t.left, t.top_rev);
+  --     -- when fr1 => return (t.top_rev, t.left, t.bottom_rev, t.right);
+  --     -- when fr2 => return (t.right_rev, t.top_rev, t.left_rev, t.bottom_rev);
+  --     -- when fr3 => return (t.bottom, t.right_rev, t.top, t.left_rev);
+  --     -- when fr4 => return (t.bottom_rev, t.right, t.top_rev, t.left);
+  --   end case;
+  -- end edges;
 
   procedure put_line(v : in Line_Value) is
   begin
-    for i in reverse 0..9 loop
-      if (v and 2**i) = 0 then
-        TIO.put(".");
-      else
-        TIO.put("#");
-      end if;
-    end loop;
-    TIO.new_line;
+    TIO.put_line(v'IMAGE);
+    -- for i in reverse 0..9 loop
+    --   if (v and 2**i) = 0 then
+    --     TIO.put(".");
+    --   else
+    --     TIO.put("#");
+    --   end if;
+    -- end loop;
+    -- TIO.new_line;
   end put_line;
 
   procedure put_line(t : in Tile) is
@@ -164,7 +181,8 @@ package body Day is
       left_rev : constant Line_Value := Line_Value'Value("2#" & reverse_string(to_string(left_str)) & "#");
       right_rev : constant Line_Value := Line_Value'Value("2#" & reverse_string(to_string(right_str)) & "#");
     begin
-      tiles.insert(id, Tile'(id => id, lines => lines, lines_rev => lines_rev, config => r1,
+      tiles.insert(id, Tile'(id => id, neighbors => Neighbor_Sets.Empty_Set,
+                             lines => lines, lines_rev => lines_rev, config => r1,
                              top => top, bottom => bottom,
                              left => left, right => right,
                              top_rev => top_rev, bottom_rev => bottom_rev,
@@ -192,54 +210,133 @@ package body Day is
       Element_Type => Natural);
   use Tile_Vectors;
 
-  function get_edges return Edge_Sets.Set is
-    all_edges : Edge_Sets.Set := Empty_Set;
+  function get_edges(id : in Natural) return Edge_Sets.Set is
+    all_edges : Edge_Sets.Set := Edge_Sets.Empty_Set;
+    t : constant Tile := tiles(id);
   begin
-    for t of tiles loop
-      declare
-        es : constant Edge_Array := edges(t);
-      begin
-        for e of es loop
-          all_edges.include(e);
-        end loop;
-      end;
-    end loop;
+    all_edges.include(t.top);
+    all_edges.include(t.top_rev);
+    all_edges.include(t.bottom);
+    all_edges.include(t.bottom_rev);
+    all_edges.include(t.left);
+    all_edges.include(t.left_rev);
+    all_edges.include(t.right);
+    all_edges.include(t.right_rev);
     return all_edges;
   end get_edges;
 
-  function permute_config(target : in Natural; ids : Tile_Vectors.Vector) return Boolean is
-  begin
-    if ids.is_empty then
-      declare
-        all_edges : constant Edge_Sets.Set := get_edges;
-      begin
-        return target = Natural(all_edges.length);
-      end;
-    end if;
+  -- function get_edges return Edge_Sets.Set is
+  --   all_edges : Edge_Sets.Set := Edge_Sets.Empty_Set;
+  -- begin
+  --   for t of tiles loop
+  --     declare
+  --       es : constant Edge_Array := edges(t);
+  --     begin
+  --       for e of es loop
+  --         all_edges.include(e);
+  --       end loop;
+  --     end;
+  --   end loop;
+  --   return all_edges;
+  -- end get_edges;
 
-    declare
-      head : constant Natural := ids.first_element;
-      rest : Tile_Vectors.Vector := ids;
-      t : Tile := tiles(head);
-    begin
-      rest.delete_first;
-      for c in Configuration loop
-        t.config := c;
-        tiles(head) := t;
-        if permute_config(target, rest) then
-          return true;
-        end if;
-      end loop;
-      return false;
-    end;
-  end permute_config;
+  -- function get_edges_except(id : Natural) return Edge_Sets.Set is
+  --   all_edges : Edge_Sets.Set := Edge_Sets.Empty_Set;
+  -- begin
+  --   for t of tiles loop
+  --     if t.id /= id then
+  --       declare
+  --         es : constant Edge_Array := edges(t);
+  --       begin
+  --         for e of es loop
+  --           all_edges.include(e);
+  --         end loop;
+  --       end;
+  --     end if;
+  --   end loop;
+  --   return all_edges;
+  -- end get_edges_except;
+
+  procedure match is
+    type Edge_Record is record
+      id : Natural;
+      conf : Configuration;
+    end record;
+
+    package Edge_Maps is new Ada.Containers.Indefinite_Hashed_Maps
+      (Key_Type       => Line_Value,
+      Element_Type    => Edge_Record,
+      Hash            => line_hash,
+      Equivalent_Keys => "=");
+    use Edge_Maps;
+
+    edge_map : Edge_Maps.Map := Edge_Maps.Empty_Map;
+  begin
+    for c in tiles.Iterate loop
+      declare
+        t : Tile := tiles(c);
+        es : constant Edge_Sets.Set := get_edges(t.id);
+      begin
+        for val of es loop
+          if edge_map.contains(val) then
+            declare
+              matched_edge : constant Edge_Record := edge_map(val);
+              matched_tile : Tile := tiles(matched_edge.id);
+            begin
+              if matched_edge.id /= t.id then
+                TIO.put_line(val'IMAGE & "- Match: " & t.id'IMAGE & ", conf:" & t.config'IMAGE & " = " & matched_tile.id'IMAGE & ", conf: " & matched_edge.conf'IMAGE);
+
+                matched_tile.neighbors.include(t.id); 
+                tiles(matched_tile.id) := matched_tile;
+                t.neighbors.include(matched_tile.id);
+                tiles(c) := t;
+              else
+                TIO.put_line("BROKEN HERE?");
+              end if;
+            end;
+          else
+            TIO.put_line("Adding " & t.id'IMAGE & ", edge: " & val'IMAGE);
+            edge_map.insert(val, Edge_Record'(id => t.id, conf => t.config));
+          end if;
+        end loop;
+      end;
+    end loop;
+  end match;
+
+  -- too slow for anything beyond the test input
+  -- function permute_config(target : in Natural; ids : Tile_Vectors.Vector) return Boolean is
+  -- begin
+  --   if ids.is_empty then
+  --     declare
+  --       all_edges : constant Edge_Sets.Set := get_edges;
+  --     begin
+  --       return target = Natural(all_edges.length);
+  --     end;
+  --   end if;
+
+  --   declare
+  --     head : constant Natural := ids.first_element;
+  --     rest : Tile_Vectors.Vector := ids;
+  --     t : Tile := tiles(head);
+  --   begin
+  --     rest.delete_first;
+  --     for c in Configuration loop
+  --       t.config := c;
+  --       tiles(head) := t;
+  --       if permute_config(target, rest) then
+  --         return true;
+  --       end if;
+  --     end loop;
+  --     return false;
+  --   end;
+  -- end permute_config;
 
   function image_checksum(filename : in String) return Long_Integer is
-    -- prod : Long_Integer := 1;
-   num_tiles : Natural;
-   side : Natural;
-   expected : Natural;
-   tile_ids : Tile_Vectors.Vector := Empty_Vector;
+    prod : Long_Integer := 1;
+    num_tiles : Natural;
+    side : Natural;
+    expected : Natural;
+    tile_ids : Tile_Vectors.Vector := Empty_Vector;
   begin
     load_tiles(filename);
     num_tiles := Natural(tiles.length);
@@ -254,34 +351,21 @@ package body Day is
     TIO.put_line("Side: " & side'IMAGE);
     TIO.put_line("Expected: " & expected'IMAGE);
 
-    if permute_config(expected, tile_ids) then
-      TIO.put_line("Found solution");
-      declare
-        all_edges : constant Edge_Sets.Set := get_edges;
-        target_size : constant Natural := Natural(all_edges.length) - 2;
-        tile_edges : Edge_Array;
-        other_edges : Edge_Sets.Set;
-      begin
-        -- XXX - want to build the edge set of all but the current tile
-        -- and verify it is the target size
-        TIO.put_line("Target size: " & target_size'IMAGE);
-        for t of tiles loop
-          tile_edges := edges(t);
-          other_edges := all_edges;
-          for e of tile_edges loop
-            other_edges.exclude(e);
-          end loop;
-          TIO.put_line("Found size: " & other_edges.length'IMAGE);
-          if target_size = Natural(other_edges.length) then
-            TIO.put_line("Found 2 edger: " & t.id'IMAGE);
-          end if;
-        end loop;
-      end;
-    else
-      TIO.put_line("Nope");
-    end if;
+    match;
 
     -- put_line(tiles);
-    return Long_Integer(tiles.length);
+    for t of tiles loop
+      -- TIO.put_line("Tile: " & t.id'IMAGE);
+      -- for n of t.neighbors loop
+      --   TIO.put(n'IMAGE & ",");
+      -- end loop;
+      -- TIO.new_line;
+      if t.neighbors.length = 2 then
+        TIO.put_line("Found 2 edger: " & t.id'IMAGE);
+        prod := prod * Long_Integer(t.id);
+      end if;
+    end loop;
+
+    return prod;
   end image_checksum;
 end Day;
