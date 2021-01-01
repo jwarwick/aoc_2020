@@ -1,7 +1,9 @@
 -- AoC 2020, Day 20
 with Ada.Text_IO;
+with Ada.Numerics.Elementary_Functions;
 with Ada.Containers.Indefinite_Hashed_Maps;
 with Ada.Containers.Ordered_Sets;
+with Ada.Containers.Hashed_Sets;
 with Ada.Containers.Vectors;
 use Ada.Containers;
 with Ada.Strings.Maps;
@@ -14,6 +16,22 @@ package body Day is
   type Line_Value is mod 2**10;
   type Tile_Array is array(0..9) of Line_Value;
 
+  type Image_Array is array(0..9, 0..9) of Boolean;
+
+  type Position is record
+    x, y : Natural;
+  end record;
+
+  function position_hash(p : in Position) return Hash_Type is
+  begin
+    return Hash_Type(p.x * 79 + p.y * 53);
+  end position_hash;
+
+  package Complete_Image_Sets is new Ada.Containers.Hashed_Sets
+    (Element_Type => Position,
+    Hash => position_hash,
+    Equivalent_Elements => "=");
+  use Complete_Image_Sets;
 
   type Configuration is (r1, r2, r3, r4, fr1, fr2, fr3, fr4);
 
@@ -27,6 +45,7 @@ package body Day is
     neighbors : Neighbor_Sets.Set;
 
     config : Configuration;
+    image : Image_Array;
 
     lines : Tile_Array;
     lines_rev : Tile_Array;
@@ -58,6 +77,22 @@ package body Day is
 
   use Tile_Maps;
   tiles : Tile_Maps.Map := Empty_Map;
+
+  pragma Warnings (Off, "procedure ""put_line"" is not referenced");
+  procedure put_line(i : in Image_Array) is
+  pragma Warnings (On, "procedure ""put_line"" is not referenced");
+  begin
+    for y in 0..9 loop
+      for x in 0..9 loop
+        if i(x, y) then
+          TIO.put("#");
+        else
+          TIO.put(".");
+        end if;
+      end loop;
+      TIO.new_line;
+    end loop;
+  end put_line;
 
   procedure put_line(v : in Line_Value) is
   begin
@@ -127,6 +162,7 @@ package body Day is
     lines_rev : Tile_Array;
     left_str : Unbounded_String;
     right_str : Unbounded_String;
+    image : Image_Array;
   begin
     loop
       declare
@@ -141,6 +177,9 @@ package body Day is
           value : constant Line_Value := Line_Value'Value("2#" & bin & "#");
           value_rev : constant Line_Value := Line_Value'Value("2#" & reverse_string(bin) & "#");
         begin
+          for c in line'Range loop
+            image(c-1, idx) := line(c) = '#';
+          end loop;
           lines(idx) := value;
           lines_rev(idx) := value_rev;
           idx := idx + 1;
@@ -164,6 +203,7 @@ package body Day is
       right_rev : constant Line_Value := Line_Value'Value("2#" & reverse_string(to_string(right_str)) & "#");
     begin
       tiles.insert(id, Tile'(id => id, neighbors => Neighbor_Sets.Empty_Set,
+                             image => image,
                              lines => lines, lines_rev => lines_rev, config => r1,
                              top => top, bottom => bottom,
                              left => left, right => right,
@@ -256,6 +296,148 @@ package body Day is
       when fr4 => return (t.bottom_rev, t.right, t.top_rev, t.left);
     end case;
   end edges;
+
+  function flip(i : in Image_Array) return Image_Array is
+    result : Image_Array;
+  begin
+    for y in 0..9 loop
+      for x in 0..9 loop
+        result(x, y) := i(9-x, y);
+      end loop;
+    end loop;
+    return result;
+  end flip;
+
+  -- rotate 90deg clockwise
+  function rotate(i : in Image_Array) return Image_Array is
+    result : Image_Array;
+  begin
+    for y in 0..9 loop
+      for x in 0..9 loop
+        result(x, y) := i(y, 9-x);
+      end loop;
+    end loop;
+    return result;
+  end rotate;
+
+  function transform(i : in Image_Array; orientation : in Configuration) return Image_Array is
+  begin
+    case orientation is
+      when r1 => return i;
+      when r2 => return rotate(i);
+      when r3 => return rotate(rotate(i));
+      when r4 => return rotate(rotate(rotate(i)));
+      when fr1 => return flip(i);
+      when fr2 => return rotate(flip(i));
+      when fr3 => return rotate(rotate(flip(i)));
+      when fr4 => return rotate(rotate(rotate(flip(i))));
+    end case;
+  end transform;
+
+  complete_image : Complete_Image_Sets.Set := Complete_Image_Sets.Empty_Set;
+
+  procedure update_complete_image(i : in Image_Array; x_offset : in Natural; y_offset : in Natural) is
+  begin
+    for y in 1..8 loop
+      for x in 1..8 loop
+        if i(x, y) then
+          declare
+            nx : constant Natural := (x_offset * 8) + (x-1);
+            ny : constant Natural := (y_offset * 8) + (y-1);
+          begin
+            complete_image.insert(Position'(x => nx, y=> ny));
+          end;
+        end if;
+      end loop;
+    end loop;
+  end update_complete_image;
+
+  -- rotate 90deg clockwise
+  procedure rotate_complete_image is
+    max : constant Natural := Natural(Ada.Numerics.Elementary_Functions.sqrt(Float(tiles.length)) * 8.0) - 1;
+    new_image : Complete_Image_Sets.Set := Complete_Image_Sets.Empty_Set;
+  begin
+    for pixel of complete_image loop
+      new_image.insert(Position'(x=>pixel.y, y=>max-pixel.x));
+    end loop;
+    complete_image := new_image;
+  end rotate_complete_image;
+
+  procedure flip_complete_image is
+    max : constant Natural := Natural(Ada.Numerics.Elementary_Functions.sqrt(Float(tiles.length)) * 8.0) - 1;
+    new_image : Complete_Image_Sets.Set := Complete_Image_Sets.Empty_Set;
+  begin
+    for pixel of complete_image loop
+      new_image.insert(Position'(x=>max-pixel.x, y=>pixel.y));
+    end loop;
+    complete_image := new_image;
+  end flip_complete_image;
+
+  pragma Warnings (Off, "procedure ""put_line"" is not referenced");
+  procedure put_line(i : in Complete_Image_Sets.Set) is
+  pragma Warnings (On, "procedure ""put_line"" is not referenced");
+    max : constant Natural := Natural(Ada.Numerics.Elementary_Functions.sqrt(Float(tiles.length)) * 8.0) - 1;
+  begin
+    for y in 0..max loop
+      for x in 0..max loop
+        if i.contains(Position'(x=>x, y=>y)) then
+          TIO.put("#");
+        else
+          TIO.put(".");
+        end if;
+      end loop;
+      TIO.new_line;
+    end loop;
+  end put_line;
+
+  function dragon_pixel(x, y : in Natural) return Boolean is
+  begin
+    return complete_image.contains(Position'(x=>x, y=>y));
+  end dragon_pixel;
+
+  function dragon_start(x, y  : in Natural) return Boolean is
+  begin
+    return
+    dragon_pixel(x+0, y+1) and then
+    dragon_pixel(x+1, y+2) and then
+    dragon_pixel(x+4, y+2) and then
+    dragon_pixel(x+5, y+1) and then
+    dragon_pixel(x+6, y+1) and then
+    dragon_pixel(x+7, y+2) and then
+    dragon_pixel(x+10, y+2) and then
+    dragon_pixel(x+11, y+1) and then
+    dragon_pixel(x+12, y+1) and then
+    dragon_pixel(x+13, y+2) and then
+    dragon_pixel(x+16, y+2) and then
+    dragon_pixel(x+17, y+1) and then
+    dragon_pixel(x+18, y+0) and then
+    dragon_pixel(x+18, y+1) and then
+    dragon_pixel(x+19, y+1);
+  end dragon_start;
+
+  function count_dragon_pixels return Natural is
+    max : constant Natural := Natural(Ada.Numerics.Elementary_Functions.sqrt(Float(tiles.length)) * 8.0) - 1;
+    cnt : Natural := 0;
+  begin
+    for rot in 0..3 loop
+      for y in 0..max loop
+        for x in 0..max loop
+          if dragon_start(x, y) then
+            cnt := cnt + 1;
+          end if;
+        end loop;
+      end loop;
+      TIO.put_line("Found dragons: " & cnt'IMAGE);
+      if cnt /= 0 then
+        return cnt * 15;
+      end if;
+      TIO.put_line("Rotating...");
+      rotate_complete_image;
+    end loop;
+    TIO.put_line("Flipping...");
+    flip_complete_image;
+    return count_dragon_pixels;
+  end count_dragon_pixels;
 
   procedure layout is
     type Candidate is record
@@ -364,8 +546,8 @@ package body Day is
       declare
         start_row : Natural;
         curr : Natural;
+        x, y : Natural;
       begin
-        TIO.put_line("Found layout");
         for c of candidates loop
           if c.up = 0 and c.left = 0 then
             start_row := c.id;
@@ -373,20 +555,26 @@ package body Day is
           end if;
         end loop;
 
+        y := 0;
         while start_row /= 0 loop
           curr := start_row;
+          x := 0;
           while curr /= 0 loop
-            TIO.put(curr'IMAGE);
+            -- TIO.put(curr'IMAGE);
+            update_complete_image(transform(tiles(curr).image, candidates(curr).orientation), x, y);
             curr := candidates(curr).right;
+            x := x + 1;
           end loop;
-          TIO.new_line;
+          -- TIO.new_line;
           start_row := candidates(start_row).down;
+          y := y + 1;
         end loop;
+
+        put_line(complete_image);
       end;
     else
       TIO.put_line("Failed to find layout");
     end if;
-
   end layout;
 
   function image_checksum(filename : in String) return Long_Integer is
@@ -405,9 +593,10 @@ package body Day is
   end image_checksum;
 
   function water_roughness return Long_Integer is
+    dragon_pixels : Natural;
   begin
     layout;
-    -- put_line(tiles);
-    return 1;
+    dragon_pixels := count_dragon_pixels;
+    return Long_Integer(Natural(complete_image.length) - dragon_pixels);
   end water_roughness;
 end Day;

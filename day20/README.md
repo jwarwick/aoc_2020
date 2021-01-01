@@ -266,4 +266,4 @@ When looking for this pattern in the image, the spaces can be anything; only the
 Determine how rough the waters are in the sea monsters' habitat by counting the number of # that are not part of a sea monster. In the above example, the habitat's water roughness is 273.
 
 How many # are not part of a sea monster?
-Answer: **X**
+Answer: **2476**
