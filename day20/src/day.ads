@@ -3,5 +3,6 @@
 package Day is
 
   function image_checksum(filename : in String) return Long_Integer;
+  function water_roughness return Long_Integer;
 
 end Day;

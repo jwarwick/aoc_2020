@@ -11,8 +11,9 @@ package body Day.Test is
 
   procedure Test_Part2 (T : in out AUnit.Test_Cases.Test_Case'Class) is
     pragma Unreferenced (T);
+    t2 : constant Long_Integer := water_roughness;
   begin
-    null;
+    Assert(t2 = 273, "Wrong number, expected 273, got" & t2'IMAGE);
   end Test_Part2;
 
   function Name (T : Test) return AUnit.Message_String is
