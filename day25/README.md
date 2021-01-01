@@ -59,3 +59,8 @@ Looks like you only needed 49 stars after all.
 You don't have enough stars to pay the deposit, though. You need 3 more.
 
 Although it hasn't changed, you can still get your puzzle input.
+
+# Part 2 (with all start completed)
+You spend all fifty stars to cover the room deposit!
+
+As you fix the soft serve machine, Santa offers you a ride in his sleigh; maybe the resort has a chimney you can use...
